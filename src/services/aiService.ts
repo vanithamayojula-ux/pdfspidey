@@ -1,8 +1,8 @@
 import { GoogleGenAI, type FunctionDeclaration, Type } from "@google/genai";
 import { db } from "../db";
 
-const apiKey = import.meta.env.VITE_GEMINI_API_KEY;
-const ai = new GoogleGenAI({ apiKey: apiKey || "" });
+const apiKey = (import.meta.env.VITE_GEMINI_API_KEY || "").trim();
+const isAiConfigured = Boolean(apiKey);
 
 const listCategoriesTool: FunctionDeclaration = {
   name: "listCategories",
@@ -170,7 +170,7 @@ const tools = [
   },
 ];
 
-export const chat = ai.chats.create({
+const chatConfig = {
   model: "gemini-3-flash-preview",
   config: {
     systemInstruction: `You are an intelligent, student-friendly, university exam preparation AI that answers strictly from the provided PDFs or study materials.
@@ -270,10 +270,26 @@ END EVERY RESPONSE WITH:
 "Do you want MCQs, previous exam questions, more problems, or a quick revision test from this topic?"`,
     tools,
   },
-});
+};
+
+let chat: ReturnType<GoogleGenAI["chats"]["create"]> | null = null;
+
+function getChat() {
+  if (!isAiConfigured) return null;
+  if (!chat) {
+    const ai = new GoogleGenAI({ apiKey });
+    chat = ai.chats.create(chatConfig);
+  }
+  return chat;
+}
 
 export async function handleAiRequest(message: string) {
-  let response = await chat.sendMessage({ message });
+  const currentChat = getChat();
+  if (!currentChat) {
+    return "AI assistant is not configured yet. Add VITE_GEMINI_API_KEY in your environment variables and redeploy to enable chat.";
+  }
+
+  let response = await currentChat.sendMessage({ message });
   
   // Handle function calls if any
   while (response.functionCalls) {
@@ -345,7 +361,7 @@ export async function handleAiRequest(message: string) {
       });
     }
     
-    response = await chat.sendMessage({
+    response = await currentChat.sendMessage({
       message: functionResponses,
     });
   }

@@ -19,10 +19,23 @@ function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
 }
 
+const debugLog = (payload: Record<string, unknown>) => {
+  // #region agent log
+  fetch('http://127.0.0.1:7703/ingest/33bd8a87-b60f-41cb-9ea1-3de7baf2f1a8',{method:'POST',mode:'no-cors',headers:{'Content-Type':'text/plain','X-Debug-Session-Id':'fb1f24'},body:JSON.stringify({sessionId:'fb1f24',...payload,timestamp:Date.now()})}).catch(()=>{});
+  // #endregion
+};
+
 export default function App() {
   const [user, loading] = useAuthState(auth);
 
   React.useEffect(() => {
+    debugLog({
+      runId: 'pre-fix',
+      hypothesisId: 'H3',
+      location: 'src/App.tsx:auth-state',
+      message: 'Auth state changed',
+      data: { loading, hasUser: Boolean(user), isAnonymous: user?.isAnonymous ?? null },
+    });
     if (user) {
       console.log('User signed in:', user.uid, 'Anonymous:', user.isAnonymous);
     } else if (!loading) {
@@ -77,6 +90,13 @@ export default function App() {
   }, [selectedFolderId]);
 
   if (loading) {
+    debugLog({
+      runId: 'pre-fix',
+      hypothesisId: 'H3',
+      location: 'src/App.tsx:render-loading',
+      message: 'Rendering loading screen',
+      data: { loading },
+    });
     return (
       <div className={`h-screen flex items-center justify-center ${theme === 'slate' ? 'bg-slate-950 text-slate-100' : 'bg-white text-zinc-900'}`}>
         <div className="flex flex-col items-center gap-4">
@@ -88,6 +108,13 @@ export default function App() {
   }
 
   if (!user) {
+    debugLog({
+      runId: 'pre-fix',
+      hypothesisId: 'H3',
+      location: 'src/App.tsx:render-login',
+      message: 'Rendering login screen',
+      data: { loading, hasUser: Boolean(user) },
+    });
     return <Login theme={theme} />;
   }
 

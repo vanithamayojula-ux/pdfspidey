@@ -1,0 +1,97 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // ===============================================================
+    // Assumed Data Model
+    // ===============================================================
+    //
+    // Collection: users
+    // Document ID: {userId}
+    // Fields:
+    //   - uid: string (required)
+    //   - email: string (required for Google, optional for Anonymous/Phone)
+    //   - displayName: string (optional)
+    //   - photoURL: string (optional)
+    //   - createdAt: number (required)
+    //   - phoneNumber: string (optional)
+    //
+    // Collection: users/{userId}/pdfs
+    // Document ID: {pdfId}
+    // Fields:
+    //   - userId: string (required)
+    //   - name: string (required, < 255 chars)
+    //   - category: string (required)
+    //   - folderId: number (optional)
+    //   - size: number (required)
+    //   - createdAt: number (required)
+    //
+    // ===============================================================
+
+    // ===============================================================
+    // Helper Functions
+    // ===============================================================
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+
+    function isValidEmail(email) {
+      return email is string && email.matches("^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$");
+    }
+
+    function hasOnlyAllowedFields(fields) {
+      return request.resource.data.keys().hasOnly(fields);
+    }
+
+    function isAdmin() {
+      return isAuthenticated() &&
+        (get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin' ||
+          (request.auth.token.email == "vanithamayojula@gmail.com" && request.auth.token.email_verified == true));
+    }
+
+    // ===============================================================
+    // Domain Validators
+    // ===============================================================
+    function isValidUser(data) {
+      let isAnonymous = request.auth.token.firebase.sign_in_provider == 'anonymous';
+      let isPhone = request.auth.token.firebase.sign_in_provider == 'phone';
+      return hasOnlyAllowedFields(['uid', 'email', 'displayName', 'photoURL', 'createdAt', 'role', 'phoneNumber']) &&
+             data.uid == request.auth.uid &&
+             (isAnonymous || isPhone || isValidEmail(data.email)) &&
+             data.createdAt is number;
+    }
+
+    function isValidPDF(data) {
+      return hasOnlyAllowedFields(['userId', 'name', 'category', 'folderId', 'size', 'createdAt']) &&
+             data.userId == request.auth.uid &&
+             data.name is string && data.name.size() > 0 && data.name.size() < 255 &&
+             data.category is string &&
+             data.size is number &&
+             data.createdAt is number;
+    }
+
+    // ===============================================================
+    // Rules
+    // ===============================================================
+    
+    match /users/{userId} {
+      allow read: if isOwner(userId) || isAdmin();
+      allow create: if isOwner(userId) && isValidUser(request.resource.data) && (request.resource.data.role == 'user' || isAdmin());
+      allow update: if isOwner(userId) && isValidUser(request.resource.data) && (request.resource.data.role == resource.data.role || isAdmin());
+    }
+
+    match /users/{userId}/pdfs/{pdfId} {
+      allow read: if isOwner(userId) || isAdmin();
+      allow create: if isOwner(userId) && isValidPDF(request.resource.data);
+      allow update: if isOwner(userId) && isValidPDF(request.resource.data);
+      allow delete: if isOwner(userId) || isAdmin();
+    }
+
+    match /{path=**} {
+      allow read, write: if false;
+    }
+  }
+}

@@ -1,7 +1,7 @@
 import React from 'react';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { db, type PDFDocument } from '../db';
-import { FileText, MoreVertical, Trash2, Eye, Download, Calendar, HardDrive, Folder } from 'lucide-react';
+import { FileText, MoreVertical, Trash2, Eye, Download, Calendar, HardDrive, Folder, RotateCcw } from 'lucide-react';
 import { format } from 'date-fns';
 import { motion, AnimatePresence } from 'motion/react';
 import { clsx, type ClassValue } from 'clsx';
@@ -30,15 +30,19 @@ export default function PDFGrid({ category, folderId, onSelectFolder, searchQuer
   }, [category, folderId, searchQuery]);
 
   const pdfs = useLiveQuery(async () => {
-    let collection = db.pdfs.toCollection();
+    let allPdfs = await db.pdfs.orderBy('createdAt').reverse().toArray();
     
-    if (folderId !== null) {
-      collection = db.pdfs.where('folderId').equals(folderId);
-    } else if (category) {
-      collection = db.pdfs.where('category').equals(category);
+    if (category === 'Recycle Bin') {
+      allPdfs = allPdfs.filter(pdf => pdf.isDeleted === 1);
+    } else {
+      allPdfs = allPdfs.filter(pdf => !pdf.isDeleted);
+      
+      if (folderId !== null) {
+        allPdfs = allPdfs.filter(pdf => pdf.folderId === folderId);
+      } else if (category) {
+        allPdfs = allPdfs.filter(pdf => pdf.category === category);
+      }
     }
-    
-    const allPdfs = await collection.reverse().sortBy('createdAt');
     
     if (searchQuery) {
       return allPdfs.filter(pdf => 
@@ -52,11 +56,24 @@ export default function PDFGrid({ category, folderId, onSelectFolder, searchQuer
   const [deletingId, setDeletingId] = React.useState<number | null>(null);
   const [deletingFolderId, setDeletingFolderId] = React.useState<number | null>(null);
 
+  const handleRestore = async (id: number, e: React.MouseEvent) => {
+    e.stopPropagation();
+    try {
+      await db.pdfs.update(id, { isDeleted: 0 });
+    } catch (error) {
+      console.error('Failed to restore PDF:', error);
+    }
+  };
+
   const handleDelete = async (id: number, e: React.MouseEvent) => {
     e.stopPropagation();
     if (deletingId === id) {
       try {
-        await db.pdfs.delete(id);
+        if (category === 'Recycle Bin') {
+          await db.pdfs.delete(id);
+        } else {
+          await db.pdfs.update(id, { isDeleted: 1 });
+        }
         setDeletingId(null);
       } catch (error) {
         console.error('Failed to delete PDF:', error);
@@ -132,6 +149,9 @@ export default function PDFGrid({ category, folderId, onSelectFolder, searchQuer
                 key={folder.id}
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
+                whileHover={{ y: -4, scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
+                transition={{ type: "spring", stiffness: 400, damping: 25 }}
                 onClick={() => onSelectFolder(folder.id!)}
                 className="group flex items-center gap-3 sm:gap-4 p-3 sm:p-4 bg-white border border-zinc-200 rounded-2xl hover:shadow-lg hover:border-zinc-300 transition-all cursor-pointer relative"
               >
@@ -144,9 +164,9 @@ export default function PDFGrid({ category, folderId, onSelectFolder, searchQuer
                 <button
                   onClick={(e) => handleDeleteFolder(folder.id!, e)}
                   className={cn(
-                    "absolute right-3 top-1/2 -translate-y-1/2 p-1.5 opacity-0 group-hover:opacity-100 rounded-lg transition-all flex items-center gap-1",
+                    "absolute right-3 top-1/2 -translate-y-1/2 p-1.5 opacity-100 lg:opacity-0 lg:group-hover:opacity-100 rounded-lg transition-all flex items-center gap-1",
                     deletingFolderId === folder.id
-                      ? "bg-red-600 text-white px-3 opacity-100"
+                      ? "bg-red-600 text-white px-3 lg:opacity-100"
                       : "hover:bg-red-50 hover:text-red-600 text-zinc-400"
                   )}
                   title={deletingFolderId === folder.id ? "Confirm Delete" : "Delete Folder"}
@@ -171,9 +191,12 @@ export default function PDFGrid({ category, folderId, onSelectFolder, searchQuer
               <motion.div
                 layout
                 key={pdf.id}
-                initial={{ opacity: 0, scale: 0.9 }}
-                animate={{ opacity: 1, scale: 1 }}
-                exit={{ opacity: 0, scale: 0.9 }}
+                initial={{ opacity: 0, scale: 0.9, y: 20 }}
+                animate={{ opacity: 1, scale: 1, y: 0 }}
+                exit={{ opacity: 0, scale: 0.9, y: 20 }}
+                whileHover={{ y: -4, scale: 1.02, boxShadow: "0 20px 25px -5px rgb(0 0 0 / 0.1)" }}
+                whileTap={{ scale: 0.98 }}
+                transition={{ type: "spring", stiffness: 400, damping: 25 }}
                 onClick={() => onView(pdf)}
                 className="group bg-white border border-zinc-200 rounded-2xl p-4 sm:p-5 hover:shadow-xl hover:border-zinc-300 transition-all cursor-pointer relative"
               >
@@ -181,24 +204,36 @@ export default function PDFGrid({ category, folderId, onSelectFolder, searchQuer
                   <div className="w-10 h-10 sm:w-12 sm:h-12 bg-zinc-100 rounded-xl flex items-center justify-center text-zinc-600 group-hover:bg-zinc-900 group-hover:text-white transition-colors">
                     <FileText className="w-5 h-5 sm:w-6 sm:h-6" />
                   </div>
-                  <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        onView(pdf);
-                      }}
-                      className="p-1.5 sm:p-2 hover:bg-zinc-100 rounded-lg text-zinc-500 hover:text-zinc-900 transition-colors"
-                      title="View"
-                    >
-                      <Eye className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
-                    </button>
-                    <button
-                      onClick={(e) => handleDownload(pdf, e)}
-                      className="p-1.5 sm:p-2 hover:bg-zinc-100 rounded-lg text-zinc-500 hover:text-zinc-900 transition-colors"
-                      title="Download"
-                    >
-                      <Download className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
-                    </button>
+                  <div className="flex gap-1 opacity-100 lg:opacity-0 lg:group-hover:opacity-100 transition-opacity">
+                    {category === 'Recycle Bin' ? (
+                      <button
+                        onClick={(e) => handleRestore(pdf.id!, e)}
+                        className="p-1.5 sm:p-2 hover:bg-zinc-100 rounded-lg text-zinc-500 hover:text-green-600 transition-colors flex items-center gap-1.5"
+                        title="Restore"
+                      >
+                        <RotateCcw className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+                      </button>
+                    ) : (
+                      <>
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            onView(pdf);
+                          }}
+                          className="p-1.5 sm:p-2 hover:bg-zinc-100 rounded-lg text-zinc-500 hover:text-zinc-900 transition-colors"
+                          title="View"
+                        >
+                          <Eye className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+                        </button>
+                        <button
+                          onClick={(e) => handleDownload(pdf, e)}
+                          className="p-1.5 sm:p-2 hover:bg-zinc-100 rounded-lg text-zinc-500 hover:text-zinc-900 transition-colors"
+                          title="Download"
+                        >
+                          <Download className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+                        </button>
+                      </>
+                    )}
                     <button
                       onClick={(e) => handleDelete(pdf.id!, e)}
                       className={cn(
@@ -207,7 +242,7 @@ export default function PDFGrid({ category, folderId, onSelectFolder, searchQuer
                           ? "bg-red-600 text-white px-2 sm:px-3"
                           : "hover:bg-red-50 text-zinc-500 hover:text-red-600"
                       )}
-                      title={deletingId === pdf.id ? "Confirm Delete" : "Delete"}
+                      title={category === 'Recycle Bin' ? (deletingId === pdf.id ? "Confirm Delete Permanently" : "Delete Permanently") : (deletingId === pdf.id ? "Confirm Delete" : "Delete")}
                     >
                       <Trash2 className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
                       {deletingId === pdf.id && <span className="text-[8px] sm:text-[10px] font-bold uppercase">Confirm</span>}

@@ -27,9 +27,10 @@ export default function PDFViewer({ pdf, onClose }: PDFViewerProps) {
   return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/90 backdrop-blur-md">
       <motion.div
-        initial={{ opacity: 0, scale: 0.95 }}
-        animate={{ opacity: 1, scale: 1 }}
-        exit={{ opacity: 0, scale: 0.95 }}
+        initial={{ opacity: 0, scale: 0.9, y: 20 }}
+        animate={{ opacity: 1, scale: 1, y: 0 }}
+        exit={{ opacity: 0, scale: 0.9, y: 20 }}
+        transition={{ type: "spring", damping: 25, stiffness: 300 }}
         className={`bg-white rounded-3xl shadow-2xl overflow-hidden flex flex-col transition-all duration-300 ${
           isFullscreen ? 'w-full h-full' : 'w-full max-w-5xl h-[85vh]'
         }`}
@@ -54,7 +55,7 @@ export default function PDFViewer({ pdf, onClose }: PDFViewerProps) {
                   window.open(pdfUrl, '_blank');
                 }
               }}
-              className="p-2 hover:bg-zinc-200 rounded-xl text-zinc-600 transition-colors"
+              className="hidden sm:block p-2 hover:bg-zinc-200 rounded-xl text-zinc-600 transition-colors"
               title="Open in New Tab"
             >
               <ExternalLink className="w-5 h-5" />
@@ -73,7 +74,7 @@ export default function PDFViewer({ pdf, onClose }: PDFViewerProps) {
             </button>
             <button
               onClick={() => setIsFullscreen(!isFullscreen)}
-              className="p-2 hover:bg-zinc-200 rounded-xl text-zinc-600 transition-colors"
+              className="hidden sm:block p-2 hover:bg-zinc-200 rounded-xl text-zinc-600 transition-colors"
               title={isFullscreen ? "Exit Fullscreen" : "Fullscreen"}
             >
               {isFullscreen ? <Minimize2 className="w-5 h-5" /> : <Maximize2 className="w-5 h-5" />}

@@ -196,9 +196,10 @@ export default function ImageToPdfModal({ isOpen, onClose, theme = 'zinc' }: Ima
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm">
       <motion.div
-        initial={{ opacity: 0, scale: 0.95 }}
-        animate={{ opacity: 1, scale: 1 }}
-        exit={{ opacity: 0, scale: 0.95 }}
+        initial={{ opacity: 0, scale: 0.9, y: 20 }}
+        animate={{ opacity: 1, scale: 1, y: 0 }}
+        exit={{ opacity: 0, scale: 0.9, y: 20 }}
+        transition={{ type: "spring", damping: 25, stiffness: 300 }}
         className={`${theme === 'slate' ? 'bg-slate-900 border border-slate-700' : 'bg-white'} w-full max-w-2xl rounded-3xl shadow-2xl overflow-hidden transition-colors duration-300 flex flex-col max-h-[90vh]`}
       >
         <div className={`p-6 border-b ${theme === 'slate' ? 'border-slate-800' : 'border-zinc-100'} flex items-center justify-between`}>
@@ -349,7 +350,7 @@ export default function ImageToPdfModal({ isOpen, onClose, theme = 'zinc' }: Ima
                     }`}
                   >
                     <img src={img.preview} alt="Preview" className="w-full h-full object-cover" />
-                    <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center gap-2">
+                    <div className="absolute inset-0 bg-black/60 opacity-100 lg:opacity-0 lg:group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center gap-2">
                       <div className="flex items-center gap-1">
                         <button
                           type="button"

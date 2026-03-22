@@ -98,9 +98,10 @@ export default function ChatAgent({ theme = 'zinc' }: ChatAgentProps) {
       <AnimatePresence>
         {isOpen && (
           <motion.div
-            initial={{ opacity: 0, y: 20, scale: 0.95 }}
+            initial={{ opacity: 0, y: 20, scale: 0.9 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, y: 20, scale: 0.95 }}
+            exit={{ opacity: 0, y: 20, scale: 0.9 }}
+            transition={{ type: "spring", damping: 25, stiffness: 300 }}
             className={`fixed bottom-24 right-6 w-[calc(100vw-3rem)] sm:w-[400px] h-[min(600px,calc(100vh-8rem))] ${
               theme === 'slate' ? 'bg-slate-900 border-slate-700' : 'bg-white border-zinc-200'
             } rounded-3xl shadow-2xl border flex flex-col overflow-hidden z-50 transition-colors duration-300`}

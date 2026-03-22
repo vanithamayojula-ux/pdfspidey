@@ -191,7 +191,7 @@ export default function Sidebar({
                   "absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-1 transition-all",
                   deletingId?.type === 'folder' && deletingId.id === folder.id
                     ? "opacity-100 z-10"
-                    : "opacity-0 group-hover:opacity-100"
+                    : "opacity-100"
                 )}>
                   <button
                     onClick={() => setAddingFolderTo({ category: categoryName, parentId: folder.id })}
@@ -346,7 +346,7 @@ export default function Sidebar({
                     "absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-1 transition-all",
                     deletingId?.type === 'category' && deletingId.id === cat.id
                       ? "opacity-100 z-10"
-                      : "opacity-0 group-hover:opacity-100"
+                      : "opacity-100"
                   )}>
                     <button
                       onClick={() => setAddingFolderTo({ category: cat.name })}
@@ -391,6 +391,24 @@ export default function Sidebar({
               </div>
             );
           })}
+
+          <div className="mt-2 pt-2 border-t border-zinc-200/50">
+            <button
+              onClick={() => {
+                onSelectCategory('Recycle Bin');
+                onSelectFolder(null);
+              }}
+              className={cn(
+                "w-full flex items-center gap-3 px-3 py-2 rounded-xl text-sm font-medium transition-all group",
+                selectedCategory === 'Recycle Bin'
+                  ? (theme === 'slate' ? "bg-red-900/50 text-red-400" : "bg-red-50 text-red-600")
+                  : (theme === 'slate' ? "text-slate-400 hover:bg-slate-800" : "text-zinc-600 hover:bg-zinc-200")
+              )}
+            >
+              <Trash2 className={cn("w-4 h-4", selectedCategory === 'Recycle Bin' ? (theme === 'slate' ? "text-red-400" : "text-red-600") : (theme === 'slate' ? "text-slate-500" : "text-zinc-400"))} />
+              Recycle Bin
+            </button>
+          </div>
         </div>
 
         <div className="mt-6 pt-6 border-t border-zinc-200/10">

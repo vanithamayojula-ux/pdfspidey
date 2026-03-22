@@ -6,7 +6,9 @@ import PDFViewer from './components/PDFViewer';
 import ChatAgent from './components/ChatAgent';
 import ImageToPdfModal from './components/ImageToPdfModal';
 import Login from './components/Login';
-import { Plus, LayoutGrid, List, Filter, ChevronDown, FileText, HardDrive, Calendar, Image as ImageIcon, LogOut, User as UserIcon, Search } from 'lucide-react';
+import BetaWelcomeModal from './components/BetaWelcomeModal';
+import FeedbackModal from './components/FeedbackModal';
+import { Plus, LayoutGrid, List, Filter, ChevronDown, FileText, HardDrive, Calendar, Image as ImageIcon, LogOut, User as UserIcon, Search, MessageSquare } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { db, type PDFDocument } from './db';
 import { useLiveQuery } from 'dexie-react-hooks';
@@ -47,6 +49,7 @@ export default function App() {
   const [searchQuery, setSearchQuery] = React.useState('');
   const [isUploadModalOpen, setIsUploadModalOpen] = React.useState(false);
   const [isImageToPdfModalOpen, setIsImageToPdfModalOpen] = React.useState(false);
+  const [isFeedbackModalOpen, setIsFeedbackModalOpen] = React.useState(false);
   const [viewingPdf, setViewingPdf] = React.useState<PDFDocument | null>(null);
   const [viewMode, setViewMode] = React.useState<'grid' | 'list'>('grid');
   const [isMobile, setIsMobile] = React.useState(false);
@@ -175,9 +178,12 @@ export default function App() {
               </button>
             )}
             <div className="flex flex-col">
-              <h2 className={`text-sm sm:text-xl font-bold ${currentTheme.text} truncate max-w-[120px] sm:max-w-none`}>
-                {selectedFolderName ? `${selectedCategory} / ${selectedFolderName}` : (selectedCategory || 'All Documents')}
-              </h2>
+              <div className="flex items-center gap-2">
+                <h2 className={`text-sm sm:text-xl font-bold ${currentTheme.text} truncate max-w-[120px] sm:max-w-none`}>
+                  {selectedFolderName ? `${selectedCategory} / ${selectedFolderName}` : (selectedCategory || 'All Documents')}
+                </h2>
+                <span className="px-1.5 sm:px-2 py-0.5 text-[9px] sm:text-[10px] font-bold bg-indigo-500 text-white rounded-full uppercase tracking-widest">Beta</span>
+              </div>
               {isMobile && (
                 <p className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest leading-none">
                   {stats?.totalCount || 0} Files
@@ -280,6 +286,14 @@ export default function App() {
             {!isMobile && (
               <>
                 <button
+                  onClick={() => setIsFeedbackModalOpen(true)}
+                  className={`px-3 py-2.5 ${theme === 'slate' ? 'bg-indigo-500/10 text-indigo-400 hover:bg-indigo-500/20' : 'bg-indigo-50 text-indigo-600 hover:bg-indigo-100'} rounded-xl font-semibold text-sm transition-all flex items-center gap-2`}
+                  title="Send Feedback"
+                >
+                  <MessageSquare className="w-4 h-4" />
+                  <span className="hidden lg:inline">Feedback</span>
+                </button>
+                <button
                   onClick={() => setIsImageToPdfModalOpen(true)}
                   className={`px-4 py-2.5 ${theme === 'slate' ? 'bg-slate-800 text-slate-200 hover:bg-slate-700' : 'bg-zinc-100 text-zinc-700 hover:bg-zinc-200'} rounded-xl font-semibold text-sm transition-all flex items-center gap-2`}
                   title="Convert Images to PDF"
@@ -350,13 +364,21 @@ export default function App() {
               <Search className="w-5 h-5" />
               <span className="text-[10px] font-bold uppercase tracking-tighter">Search</span>
             </button>
+            <button 
+              onClick={() => setIsFeedbackModalOpen(true)}
+              className="flex flex-col items-center gap-1 p-2 text-indigo-400"
+            >
+              <MessageSquare className="w-5 h-5" />
+              <span className="text-[10px] font-bold uppercase tracking-tighter">Feedback</span>
+            </button>
           </div>
         )}
 
         {/* Mobile FAB */}
         {isMobile && (
           <motion.button
-            whileTap={{ scale: 0.9 }}
+            whileHover={{ scale: 1.1, rotate: 90 }}
+            whileTap={{ scale: 0.9, rotate: -90 }}
             onClick={() => setIsUploadModalOpen(true)}
             className={`fixed bottom-20 right-6 w-14 h-14 rounded-full flex items-center justify-center shadow-2xl z-40 m3-elevation-2 ${theme === 'slate' ? 'bg-slate-700 text-white' : 'bg-zinc-900 text-white'}`}
           >
@@ -376,6 +398,14 @@ export default function App() {
         onClose={() => setIsImageToPdfModalOpen(false)}
         theme={theme}
       />
+
+      <FeedbackModal
+        isOpen={isFeedbackModalOpen}
+        onClose={() => setIsFeedbackModalOpen(false)}
+        theme={theme}
+      />
+
+      <BetaWelcomeModal theme={theme} />
 
       <AnimatePresence>
         {viewingPdf && (

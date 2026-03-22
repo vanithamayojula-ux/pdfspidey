@@ -102,9 +102,10 @@ export default function UploadModal({ isOpen, onClose, theme = 'zinc' }: UploadM
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm">
       <motion.div
-        initial={{ opacity: 0, scale: 0.95 }}
-        animate={{ opacity: 1, scale: 1 }}
-        exit={{ opacity: 0, scale: 0.95 }}
+        initial={{ opacity: 0, scale: 0.9, y: 20 }}
+        animate={{ opacity: 1, scale: 1, y: 0 }}
+        exit={{ opacity: 0, scale: 0.9, y: 20 }}
+        transition={{ type: "spring", damping: 25, stiffness: 300 }}
         className={`${theme === 'slate' ? 'bg-slate-900 border border-slate-700' : 'bg-white'} w-full max-w-md rounded-3xl shadow-2xl overflow-hidden transition-colors duration-300`}
       >
         <div className={`p-6 border-b ${theme === 'slate' ? 'border-slate-800' : 'border-zinc-100'} flex items-center justify-between`}>
@@ -131,7 +132,7 @@ export default function UploadModal({ isOpen, onClose, theme = 'zinc' }: UploadM
             />
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div className="space-y-2">
               <label className={`text-sm font-semibold ${theme === 'slate' ? 'text-slate-300' : 'text-zinc-700'}`}>Category</label>
               <select

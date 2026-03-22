@@ -9,6 +9,7 @@ export interface PDFDocument {
   type: string;
   data: Blob;
   createdAt: number;
+  isDeleted?: number;
 }
 
 export interface Category {
@@ -41,6 +42,11 @@ export class PDFVaultDB extends Dexie {
     });
     this.version(3).stores({
       pdfs: '++id, name, category, folderId, createdAt',
+      categories: '++id, &name',
+      folders: '++id, name, categoryName, parentId'
+    });
+    this.version(4).stores({
+      pdfs: '++id, name, category, folderId, createdAt, isDeleted',
       categories: '++id, &name',
       folders: '++id, name, categoryName, parentId'
     });
